@@ -1,0 +1,36 @@
+const db = require('../db/knex');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { sendVerificationEmail } = require('../utils/sendEmail');
+
+const registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+    const existingUser = await db('users').where({ email }).first();
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const token = crypto.randomBytes(32).toString('hex');
+
+    await db('users').insert({
+      name,
+      email,
+      password: hashedPassword,
+      is_verified: false,
+      verification_token: token,
+      role: 'user',
+    });
+
+    await sendVerificationEmail(email, name, token);
+
+    res.status(200).json({ message: 'Registration successful! Please check your email.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error during registration' });
+  }
+};
+
+module.exports = { registerUser };
