@@ -2,7 +2,6 @@ const db = require('../db/knex');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-
 const { sendVerificationEmail } = require('../utils/sendEmail');
 
 const registerUser = async (req, res) => {
@@ -35,71 +34,72 @@ const registerUser = async (req, res) => {
   }
 };
 
-
 const verifyEmail = async (req, res) => {
-    const {token} = req.params;
+  const { token } = req.params;
 
-    try {
-        const user = await db('users').where({verification_token: token}).first();
+  try {
+    const user = await db('users').where({ verification_token: token }).first();
 
-        if (!user) {
-            return res.status(400).json({message: 'invalid or expired verification token'});
-
-        }
-
-        await db('users')
-        .where({id: user.id})
-        .update({
-            is_verified: true,
-            verification_token: null
-        });
-        res.status(200).json({message: 'Email verified successfully! You can now log in.'});
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({message: 'Server error during email verification'});
-    }
-}
+
+    await db('users')
+      .where({ id: user.id })
+      .update({
+        is_verified: true,
+        verification_token: null,
+      });
+
+    res.status(200).json({ message: 'Email verified successfully! You can now log in.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error during email verification' });
+  }
+};
 
 const loginUser = async (req, res) => {
-    const {email, password} = req.body;
+  const { email, password } = req.body;
 
-    try {
-        const user = await db('users').where({email}).first();
-        if (!user) {
-            return res.status(400).json({message: 'user not found'});
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(400).json({message: 'Invalid email or password'});
-        }
-
-        if (!user.is_verified) {
-            return res.status(400).json({message: 'Please verify your email before logging in'});
-        }
-
-        const token = jwt.sign(
-            {userId: user.id, role: user.role},
-            process.env.JWT_SECRET,
-            {expiresIn: '2h'}
-        );
-
-        res.status(200).json({
-            message: 'Login successful',
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({message: 'Server error during login'});
+  try {
+    const user = await db('users').where({ email }).first();
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
     }
-}
 
-module.exports = { registerUser };
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    if (!user.is_verified) {
+      return res.status(400).json({ message: 'Please verify your email before logging in' });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error during login' });
+  }
+};
+
+module.exports = {
+  registerUser,
+  verifyEmail,
+  loginUser,
+};

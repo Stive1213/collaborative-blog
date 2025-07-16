@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import login from './pages/Login';
+import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import VerifyPage from './pages/VerifyPage';
@@ -12,7 +12,7 @@ function App() {
       <div className='p-4'>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/login" element={<login />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify/:token" element={<VerifyPage />} />
         </Routes>
