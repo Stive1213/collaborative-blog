@@ -12,6 +12,10 @@ db.schema.hasTable('users').then(exists => {
             table.string('google_id');
             table.string('verification_token');
             table.string('role').defaultTo('user');
+            // add to setup.js or migration script
+table.string('reset_token').nullable();
+table.datetime('reset_token_expiry').nullable();
+
         }).then(() => {
             console.log('Users table created');
         })
