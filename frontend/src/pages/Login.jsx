@@ -18,7 +18,10 @@ function Login() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5000/auth/login", formData);
+      const res = await axios.post(
+        "http://localhost:5000/auth/login",
+        formData
+      );
       login(res.data.user, res.data.token); // Save to context + localStorage
 
       // ✅ Redirect based on role
@@ -53,19 +56,19 @@ function Login() {
 
   return (
     <GoogleOAuthProvider clientId="62754739601-6m3at2ubmtifo436o8hetinv40gi62v1.apps.googleusercontent.com">
-      <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
+      <div className="max-w-md mx-auto mt-10 p-6 bg-gray-100 rounded-xl shadow-lg  ">
         <h2 className="text-2xl font-semibold mb-4">Login</h2>
 
         {error && <p className="text-red-500 mb-2">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 ">
           <input
             type="email"
             name="email"
             placeholder="Email address"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
             required
           />
           <input
@@ -74,23 +77,31 @@ function Login() {
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
             required
           />
 
           <div className="flex justify-between items-center text-sm">
-            <Link to="/forgot-password" className="text-blue-600 hover:underline">
+            <Link
+              to="/forgot-password"
+              className="text-blue-600 hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
 
-          <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+          <button className="w-full bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700">
             Log In
           </button>
+          <Link to="/register" className="text-blue-600 hover:underline">
+            Don't have an account?
+          </Link>
         </form>
 
         <div className="mt-4">
-          <p className="text-center text-gray-500 text-sm mb-2">or sign in with</p>
+          <p className="text-center text-gray-500 text-sm mb-2">
+            or sign in with
+          </p>
           <div className="flex justify-center">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}

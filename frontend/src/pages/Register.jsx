@@ -22,7 +22,10 @@ function Register() {
     setSuccess("");
 
     try {
-      const res = await axios.post("http://localhost:5000/auth/register", formData);
+      const res = await axios.post(
+        "http://localhost:5000/auth/register",
+        formData
+      );
       setSuccess(res.data.message);
       setTimeout(() => {
         navigate("/login");
@@ -33,7 +36,7 @@ function Register() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
+    <div className="max-w-md mx-auto mt-10 p-6 bg-gray-100 rounded shadow-lg">
       <h2 className="text-2xl font-semibold mb-4">Register</h2>
 
       {error && <p className="text-red-500 mb-2">{error}</p>}
@@ -46,7 +49,7 @@ function Register() {
           placeholder="Your name"
           value={formData.name}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border-none rounded"
           required
         />
         <input
@@ -55,7 +58,7 @@ function Register() {
           placeholder="Your email"
           value={formData.email}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border-none rounded"
           required
         />
         <input
@@ -64,12 +67,12 @@ function Register() {
           placeholder="Create a password"
           value={formData.password}
           onChange={handleChange}
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border-none rounded"
           required
         />
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          className="w-full bg-green-400 text-white p-2 rounded hover:bg-green-700"
         >
           Register
         </button>
