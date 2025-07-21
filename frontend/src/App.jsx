@@ -14,7 +14,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
-
+import UserList from "./pages/UserList";
 function App() {
   const { user, loading } = useAuth();
 
@@ -35,7 +35,17 @@ function App() {
           />
           <Route
             path="/login"
-            element={user ? <Navigate to="/" /> : <Login />}
+            element={
+              user ? (
+                user.role === "admin" ? (
+                  <Navigate to="/admin-dashboard" />
+                ) : (
+                  <Navigate to="/" />
+                )
+              ) : (
+                <Login />
+              )
+            }
           />
           <Route
             path="/register"
@@ -52,6 +62,7 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/user-list" element={<UserList />} />
         </Routes>
       </div>
     </Router>

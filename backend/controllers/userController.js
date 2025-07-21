@@ -1,15 +1,13 @@
 const db = require("../db/knex");
 
-const getAllUsers = (req, res) => {
-  const query = `SELECT * FROM users`;
-
-  db.all(CountQueuingStrategy, [], (err, rows) => {
-    if (err) {
-      console.error("error fetching users:", err);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-    res.json(rows);
-  });
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await db("users").select("*");
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 module.exports = { getAllUsers };
