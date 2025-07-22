@@ -62,7 +62,14 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route path="/user-list" element={<UserList />} />
+          <Route
+            path="/user-list"
+            element={
+              <PrivateRoute requiredRole="admin">
+                <UserList />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>
