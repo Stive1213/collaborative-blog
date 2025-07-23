@@ -44,3 +44,120 @@ db.schema.hasTable("posts").then((exists) => {
       });
   }
 });
+
+db.schema.hasTable("likes").then((exists) => {
+  if (!exists) {
+    return db.schema
+      .createTable("likes", (table) => {
+        table.increments("id").primary();
+        table
+          .integer("user_id")
+          .unsigned()
+          .references("id")
+          .inTable("users")
+          .onDelete("CASCADE");
+        table
+          .integer("post_id")
+          .unsigned()
+          .references("id")
+          .inTable("posts")
+          .onDelete("CASCADE");
+        table.timestamp("created_at").defaultTo(db.fn.now());
+      })
+      .then(() => {
+        console.log("likes table created");
+      });
+  }
+});
+db.schema.hasTable("comments").then((exists) => {
+  if (!exists) {
+    return db.schema
+      .createTable("comments", (table) => {
+        table.increments("id").primary();
+        table
+          .integer("user_id")
+          .unsigned()
+          .references("id")
+          .inTable("users")
+          .onDelete("CASCADE");
+        table
+          .integer("post_id")
+          .unsigned()
+          .references("id")
+          .inTable("posts")
+          .onDelete("CASCADE");
+        table.text("content");
+        table.timestamp("created_at").defaultTo(db.fn.now());
+      })
+      .then(() => {
+        console.log("comments table created");
+      });
+  }
+});
+db.schema.hasTable("shares").then((exists) => {
+  if (!exists) {
+    db.schema
+      .createTable("shares", (table) => {
+        table.increments("id").primary();
+        table
+          .integer("user_id")
+          .unsigned()
+          .references("id")
+          .inTable("users")
+          .onDelete("CASCADE");
+        table
+          .integer("post_id")
+          .unsigned()
+          .references("id")
+          .inTable("posts")
+          .onDelete("CASCADE");
+        table.timestamp("shared_at").defaultTo(db.fn.now());
+      })
+      .then(() => console.log(" shares table created"));
+  }
+});
+db.schema.hasTable("reposts").then((exists) => {
+  if (!exists) {
+    db.schema
+      .createTable("reposts", (table) => {
+        table.increments("id").primary();
+        table
+          .integer("user_id")
+          .unsigned()
+          .references("id")
+          .inTable("users")
+          .onDelete("CASCADE");
+        table
+          .integer("original_post_id")
+          .unsigned()
+          .references("id")
+          .inTable("posts")
+          .onDelete("CASCADE");
+        table.text("caption").nullable(); // optional message from user
+        table.timestamp("created_at").defaultTo(db.fn.now());
+      })
+      .then(() => console.log(" reposts table created"));
+  }
+});
+db.schema.hasTable("favorites").then((exists) => {
+  if (!exists) {
+    db.schema
+      .createTable("favorites", (table) => {
+        table.increments("id").primary();
+        table
+          .integer("user_id")
+          .unsigned()
+          .references("id")
+          .inTable("users")
+          .onDelete("CASCADE");
+        table
+          .integer("post_id")
+          .unsigned()
+          .references("id")
+          .inTable("posts")
+          .onDelete("CASCADE");
+        table.timestamp("added_at").defaultTo(db.fn.now());
+      })
+      .then(() => console.log(" favorites table created"));
+  }
+});
