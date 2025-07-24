@@ -27,6 +27,38 @@ const createPost = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+const updatePost = async (req, res) => {
+  const { id } = req.params;
+  const { title, content, pin } = req.body;
+  const image = req.file;
+
+  try {
+    const post = await db("posts").where({ id }).first();
+    if (!post) {
+      return res.status(404).json({ message: "post not found" });
+    }
+
+    const image_path = image ? `uploads/${image.filename}` : post.image_path;
+
+    await db("posts")
+      .where({ id })
+      .update({
+        title: title || post.title,
+        content: content || post.content,
+        pin: pin !== undefined ? pin : post.pin,
+        image_path,
+      });
+
+    const updatePost = await db("posts").where({ id }).first();
+
+    res
+      .status(200)
+      .json({ message: "post updated successfully", post: updatePost });
+  } catch (err) {
+    console.error("error updating post:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 const getAllPosts = async (req, res) => {
   try {
@@ -54,4 +86,4 @@ const deletePost = async (req, res) => {
   }
 };
 
-module.exports = { createPost, getAllPosts, deletePost };
+module.exports = { createPost, getAllPosts, deletePost, updatePost };

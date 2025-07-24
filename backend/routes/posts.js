@@ -6,6 +6,7 @@ const path = require("path");
 const {
   getAllPosts,
   createPost,
+  updatePost,
   deletePost,
 } = require("../controllers/postController");
 
@@ -25,5 +26,5 @@ const upload = multer({ storage });
 router.post("/", upload.single("image"), createPost);
 router.get("/", getAllPosts);
 router.delete("/:id", deletePost);
-
+router.put("/:id", upload.single("image"), updatePost);
 module.exports = router;
