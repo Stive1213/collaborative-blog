@@ -62,7 +62,10 @@ const updatePost = async (req, res) => {
 
 const getAllPosts = async (req, res) => {
   try {
-    const posts = await db("posts").select("*").orderBy("created_at", "desc");
+    const posts = await db("posts")
+      .join("users", "posts.user_id", "users.id")
+      .select("posts.*", "users.name as author_name", "users.id as author_id")
+      .orderBy("posts.created_at", "desc");
     res.status(200).json(posts);
   } catch (err) {
     console.error("error fetching posts:", err);
