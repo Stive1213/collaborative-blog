@@ -1,13 +1,38 @@
 const db = require("../db/knex");
 
+// Helper to get interaction counts for a post
+const getCounts = async (postId) => {
+  const [likes] = await db("likes")
+    .count("* as count")
+    .where({ post_id: postId });
+  const [comments] = await db("comments")
+    .count("* as count")
+    .where({ post_id: postId });
+  const [favorites] = await db("favorites")
+    .count("* as count")
+    .where({ post_id: postId });
+  const [reposts] = await db("reposts")
+    .count("* as count")
+    .where({ original_post_id: postId });
+  const [shares] = await db("shares")
+    .count("* as count")
+    .where({ post_id: postId });
+  return {
+    like_count: likes.count,
+    comment_count: comments.count,
+    favorite_count: favorites.count,
+    repost_count: reposts.count,
+    share_count: shares.count,
+  };
+};
+
+// 📥 Create Post
 const createPost = async (req, res) => {
   const { user_id, title, content } = req.body;
   const image = req.file;
 
   if (!user_id || !title || !content) {
-    return res
-      .status(400)
-      .json({ message: "user_id, title, and content are required" });
+    return res.status(400).json({ message: "Missing fields" });
   }
 
   try {
@@ -18,15 +43,69 @@ const createPost = async (req, res) => {
       image_path: image ? `uploads/${image.filename}` : null,
       pin: 0,
     });
+
     const newPost = await db("posts").where({ id }).first();
-    res
-      .status(201)
-      .json({ message: "post created successfully", post: newPost });
+    res.status(201).json(newPost);
   } catch (err) {
-    console.error("error creating post:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(err);
+    res.status(500).json({ message: "Error creating post" });
   }
 };
+
+// 📤 Get All Posts (with interaction counts & author)
+const getAllPosts = async (req, res) => {
+  try {
+    const posts = await db("posts")
+      .select("posts.*", "users.name as author_name", "users.id as author_id")
+      .join("users", "users.id", "posts.user_id")
+      .orderBy([
+        { column: "pin", order: "desc" },
+        { column: "created_at", order: "desc" },
+      ]);
+
+    const enriched = await Promise.all(
+      posts.map(async (post) => ({
+        ...post,
+        author: { id: post.author_id, name: post.author_name },
+        ...(await getCounts(post.id)),
+      }))
+    );
+
+    res.json(enriched);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching posts" });
+  }
+};
+
+// 📄 Get Single Post with Comments
+const getSinglePost = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const post = await db("posts")
+      .select("posts.*", "users.name as author_name", "users.id as author_id")
+      .join("users", "users.id", "posts.user_id")
+      .where("posts.id", id)
+      .first();
+
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const comments = await db("comments")
+      .select("comments.*", "users.name as commenter_name")
+      .join("users", "comments.user_id", "users.id")
+      .where({ post_id: id });
+
+    res.json({
+      ...post,
+      author: { id: post.author_id, name: post.author_name },
+      comments,
+      ...(await getCounts(post.id)),
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error getting post" });
+  }
+};
+
+// ✏️ Update Post
 const updatePost = async (req, res) => {
   const { id } = req.params;
   const { title, content, pin } = req.body;
@@ -34,11 +113,7 @@ const updatePost = async (req, res) => {
 
   try {
     const post = await db("posts").where({ id }).first();
-    if (!post) {
-      return res.status(404).json({ message: "post not found" });
-    }
-
-    const image_path = image ? `uploads/${image.filename}` : post.image_path;
+    if (!post) return res.status(404).json({ message: "Not found" });
 
     await db("posts")
       .where({ id })
@@ -46,120 +121,115 @@ const updatePost = async (req, res) => {
         title: title || post.title,
         content: content || post.content,
         pin: pin !== undefined ? pin : post.pin,
-        image_path,
+        image_path: image ? `uploads/${image.filename}` : post.image_path,
       });
 
-    const updatePost = await db("posts").where({ id }).first();
-
-    res
-      .status(200)
-      .json({ message: "post updated successfully", post: updatePost });
+    const updated = await db("posts").where({ id }).first();
+    res.json(updated);
   } catch (err) {
-    console.error("error updating post:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Error updating" });
   }
 };
 
-const getAllPosts = async (req, res) => {
-  try {
-    const posts = await db("posts")
-      .leftJoin("users", "posts.user_id", "users.id")
-      .leftJoin("likes", "posts.id", "likes.post_id")
-      .leftJoin("comments", "posts.id", "comments.post_id")
-      .leftJoin("reposts", "posts.id", "reposts.original_post_id")
-      .leftJoin("shares", "posts.id", "shares.post_id")
-      .groupBy("posts.id")
-      .select(
-        "posts.*",
-        "users.name as author_name",
-        "users.email as author_email",
-        "users.id as author_id",
-        db.raw("COUNT(DISTINCT likes.id) as like_count"),
-        db.raw("COUNT(DISTINCT comments.id) as comment_count"),
-        db.raw("COUNT(DISTINCT reposts.id) as repost_count"),
-        db.raw("COUNT(DISTINCT shares.id) as share_count")
-      )
-      .orderBy("posts.created_at", "desc");
-    res.status(200).json(posts);
-  } catch (err) {
-    console.error("error fetching posts:", err);
-    res.status(500).json({ message: "internalserver error" });
-  }
-};
-
+// ❌ Delete Post
 const deletePost = async (req, res) => {
   const { id } = req.params;
+  const { user_id, is_admin } = req.body;
 
-  try {
-    const deletePost = await db("posts").where({ id }).del();
-    if (deletePost) {
-      res.status(200).json({ message: "Post deleted successfully" });
-    } else {
-      res.status(404).json({ message: "Post not found" });
-    }
-  } catch (err) {
-    console.error("errror deleting post:", err);
-    res.status(500).json({ message: "Internal server error" });
+  const post = await db("posts").where({ id }).first();
+  if (!post) return res.status(404).json({ message: "Post not found" });
+
+  if (post.user_id !== +user_id && !is_admin) {
+    return res.status(403).json({ message: "Not authorized" });
+  }
+
+  await db("posts").where({ id }).del();
+  res.json({ message: "Post deleted" });
+};
+
+// 💬 Comment
+const commentOnPost = async (req, res) => {
+  const { user_id, post_id, content } = req.body;
+  if (!content) return res.status(400).json({ message: "Empty comment" });
+
+  await db("comments").insert({ user_id, post_id, content });
+  res.json({ message: "Comment added" });
+};
+
+// 🗑️ Delete Comment
+const deleteComment = async (req, res) => {
+  const { comment_id } = req.params;
+  const { user_id, is_post_owner } = req.body;
+
+  const comment = await db("comments").where({ id: comment_id }).first();
+  if (!comment) return res.status(404).json({ message: "Not found" });
+
+  if (comment.user_id !== +user_id && !is_post_owner) {
+    return res.status(403).json({ message: "Not allowed" });
+  }
+
+  await db("comments").where({ id: comment_id }).del();
+  res.json({ message: "Comment deleted" });
+};
+
+// ❤️ Like/Unlike
+const likePost = async (req, res) => {
+  const { user_id, post_id } = req.body;
+  const exists = await db("likes").where({ user_id, post_id }).first();
+  if (exists) {
+    await db("likes").where({ user_id, post_id }).del();
+    return res.json({ message: "Unliked" });
+  } else {
+    await db("likes").insert({ user_id, post_id });
+    return res.json({ message: "Liked" });
   }
 };
 
-const getSinglePost = async (req, res) => {
-  const { id } = req.params;
-  const { userId } = req.query;
-
-  try {
-    const post = await db("posts")
-      .leftJoin("users", "posts.user_id", "users.id")
-      .leftJoin("likes", "posts.id", "likes.post_id")
-      .leftJoin("reposts", "posts.id", "reposts.original_post_id")
-      .leftJoin("shares", "posts.id", "shares.post_id")
-      .where("posts.id", id)
-      .groupBy("posts.id")
-      .select(
-        "posts.*",
-        "users.name as author_name",
-        db.raw("COUNT(DISTINCT likes.id) as like_count"),
-        db.raw("COUNT(DISTINCT reposts.id) as repost_count"),
-        db.raw("COUNT(DISTINCT shares.id) as share_count")
-      )
-      .first();
-
-    const comments = await db("comments")
-      .where({ post_id: id })
-      .leftJoin("users", "comments.user_id", "users.id")
-      .select("comments.*", "users.name as author_name")
-      .orderBy("comments.created_at", "desc");
-
-    let interactions = {
-      liked: false,
-      saved: false,
-      reposted: false,
-    };
-
-    if (userId) {
-      const [liked, saved, reposted] = await Promise.all([
-        db("likes").where({ post_id: id, user_id: userId }).first(),
-        db("favorites").where({ post_id: id, user_id: userId }).first(),
-        db("reposts").where({ original_post_id: id, user_id: userId }).first(),
-      ]);
-      interactions = {
-        liked: !!liked,
-        saved: !!saved,
-        reposted: !!reposted,
-      };
-    }
-
-    res.json({ post, comments, interactions });
-  } catch (err) {
-    console.error("Error fetching post detail:", err);
-    res.status(500).json({ message: "Error fetching post" });
+// 🔁 Repost/Remove
+const repostPost = async (req, res) => {
+  const { user_id, post_id } = req.body;
+  const exists = await db("reposts")
+    .where({ user_id, original_post_id: post_id })
+    .first();
+  if (exists) {
+    await db("reposts").where({ user_id, original_post_id: post_id }).del();
+    return res.json({ message: "Repost removed" });
+  } else {
+    await db("reposts").insert({ user_id, original_post_id: post_id });
+    return res.json({ message: "Reposted" });
   }
+};
+
+// ⭐ Save/Unsave
+const savePost = async (req, res) => {
+  const { user_id, post_id } = req.body;
+  const exists = await db("favorites").where({ user_id, post_id }).first();
+  if (exists) {
+    await db("favorites").where({ user_id, post_id }).del();
+    return res.json({ message: "Removed from saved" });
+  } else {
+    await db("favorites").insert({ user_id, post_id });
+    return res.json({ message: "Post saved" });
+  }
+};
+
+// 📤 Share
+const sharePost = async (req, res) => {
+  const { user_id, post_id } = req.body;
+  await db("shares").insert({ user_id, post_id });
+  res.json({ message: "Shared" });
 };
 
 module.exports = {
   createPost,
   getAllPosts,
-  deletePost,
-  updatePost,
   getSinglePost,
+  updatePost,
+  deletePost,
+  likePost,
+  repostPost,
+  savePost,
+  sharePost,
+  commentOnPost,
+  deleteComment,
 };
