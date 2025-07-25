@@ -63,8 +63,22 @@ const updatePost = async (req, res) => {
 const getAllPosts = async (req, res) => {
   try {
     const posts = await db("posts")
-      .join("users", "posts.user_id", "users.id")
-      .select("posts.*", "users.name as author_name", "users.id as author_id")
+      .leftJoin("users", "posts.user_id", "users.id")
+      .leftJoin("likes", "posts.id", "likes.post_id")
+      .leftJoin("comments", "posts.id", "comments.post_id")
+      .leftJoin("reposts", "posts.id", "reposts.original_post_id")
+      .leftJoin("shares", "posts.id", "shares.post_id")
+      .groupBy("posts.id")
+      .select(
+        "posts.*",
+        "users.name as author_name",
+        "users.email as author_email",
+        "users.id as author_id",
+        db.raw("COUNT(DISTINCT likes.id) as like_count"),
+        db.raw("COUNT(DISTINCT comments.id) as comment_count"),
+        db.raw("COUNT(DISTINCT reposts.id) as repost_count"),
+        db.raw("COUNT(DISTINCT shares.id) as share_count")
+      )
       .orderBy("posts.created_at", "desc");
     res.status(200).json(posts);
   } catch (err) {

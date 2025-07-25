@@ -27,14 +27,23 @@ function Dashboard() {
         <ul>
           {posts.map((post) => (
             <li key={post.id} className="mb-4 p-4 border rounded">
-              <div>
-                <p className="text-sm test-gray-500">
-                  By <strong>{post.author_name}</strong>
-                </p>
-                <p className="text-lg font-bold">
-                  <strong>{post.title}</strong>
-                </p>
-                <p>{post.content}</p>
+              <div className="mb-2 test-sm text-gray-500">
+                By{" "}
+                <a
+                  href={`/profile/${post.author_id}`}
+                  className="text-blue-600 hover:underLine"
+                >
+                  {post.author_name}
+                </a>
+                <span className="ml-2 text-gray-400">{post.author_email}</span>
+              </div>
+              <p className="text-lg font-semibold mb-1">{post.title}</p>
+              <p className="mb-2">{post.content}</p>
+              <div className="text-sm text-gray-600 mt-2 flex gap-4">
+                <span>❤{post.like_count}</span>
+                <span>💬{post.comment_count} </span>
+                <span>✅{post.repost_count}</span>
+                <span>✅{post.share_count}</span>
               </div>
             </li>
           ))}
