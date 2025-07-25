@@ -140,8 +140,7 @@ function PostDetailPage() {
       {/* Interaction Buttons */}
       <div className="flex gap-6 text-gray-700 mb-4 text-sm items-center">
         <button onClick={toggleLike} className="hover:underline">
-          {interactions.liked ? "💔 Unlike" : "❤️ Like"} ({post.like_count || 0}
-          )
+          {interactions.liked ? "💔 " : "❤️ "} ({post.like_count || 0})
         </button>
         <button onClick={toggleRepost} className="hover:underline">
           {interactions.reposted ? "🔁 Remove Repost" : "🔁 Repost"} (

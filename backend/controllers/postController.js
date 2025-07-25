@@ -102,8 +102,10 @@ const deletePost = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 const getSinglePost = async (req, res) => {
   const { id } = req.params;
+  const { userId } = req.query;
 
   try {
     const post = await db("posts")
@@ -124,9 +126,30 @@ const getSinglePost = async (req, res) => {
 
     const comments = await db("comments")
       .where({ post_id: id })
-      .orderBy("created_at", "desc");
+      .leftJoin("users", "comments.user_id", "users.id")
+      .select("comments.*", "users.name as author_name")
+      .orderBy("comments.created_at", "desc");
 
-    res.json({ post, comments });
+    let interactions = {
+      liked: false,
+      saved: false,
+      reposted: false,
+    };
+
+    if (userId) {
+      const [liked, saved, reposted] = await Promise.all([
+        db("likes").where({ post_id: id, user_id: userId }).first(),
+        db("favorites").where({ post_id: id, user_id: userId }).first(),
+        db("reposts").where({ original_post_id: id, user_id: userId }).first(),
+      ]);
+      interactions = {
+        liked: !!liked,
+        saved: !!saved,
+        reposted: !!reposted,
+      };
+    }
+
+    res.json({ post, comments, interactions });
   } catch (err) {
     console.error("Error fetching post detail:", err);
     res.status(500).json({ message: "Error fetching post" });
