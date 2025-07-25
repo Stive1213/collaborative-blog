@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 function Dashboard() {
   const [posts, setPosts] = useState([]);
@@ -17,8 +18,16 @@ function Dashboard() {
         setLoading(false);
       });
   }, []);
+
+  const truncateText = (text, limit = 3) => {
+    const lines = text.split("\n");
+    return lines.length > limit
+      ? lines.slice(0, limit).join("\n") + "..."
+      : text;
+  };
+
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-3xl mx-auto mt-10 p-6">
       {loading ? (
         <p>loading...</p>
       ) : posts.length === 0 ? (
@@ -26,24 +35,42 @@ function Dashboard() {
       ) : (
         <ul>
           {posts.map((post) => (
-            <li key={post.id} className="mb-4 p-4 border rounded">
-              <div className="mb-2 test-sm text-gray-500">
-                By{" "}
-                <a
-                  href={`/profile/${post.author_id}`}
-                  className="text-blue-600 hover:underLine"
+            <li
+              key={post.id}
+              className="mb-6 p-4 border rounded bg-gray-50 shadow hover:bg-gray-100 transition"
+            >
+              <Link to={`/post/${post.id}`}>
+                <p className="text-sm text-gray-500">
+                  By <span className="font-medium">{post.author_name}</span>
+                </p>
+                {post.image_path && (
+                  <img
+                    src={`http://localhost:5000/${post.image_path}`}
+                    alt="Post"
+                    className="w-full h-48 object-cover my-2 rounded"
+                  />
+                )}
+                <p className="text-lg font-semibold">{post.title}</p>
+                <p className="text-gray-700 whitespace-pre-line">
+                  {truncateText(post.content)}
+                </p>
+              </Link>
+
+              {/* Interaction Buttons */}
+              <div className="mt-3 flex gap-4 text-sm text-gray-600">
+                <button>❤️ {post.like_count}</button>
+                <button>💬 {post.comment_count}</button>
+                <button
+                  onClick={() =>
+                    navigator.clipboard.writeText(
+                      `http://localhost:5173/post/${post.id}`
+                    )
+                  }
                 >
-                  {post.author_name}
-                </a>
-                <span className="ml-2 text-gray-400">{post.author_email}</span>
-              </div>
-              <p className="text-lg font-semibold mb-1">{post.title}</p>
-              <p className="mb-2">{post.content}</p>
-              <div className="text-sm text-gray-600 mt-2 flex gap-4">
-                <span>❤{post.like_count}</span>
-                <span>💬{post.comment_count} </span>
-                <span>✅{post.repost_count}</span>
-                <span>✅{post.share_count}</span>
+                  🔗 Share
+                </button>
+                <button>🔁</button>
+                <button>⭐</button>
               </div>
             </li>
           ))}

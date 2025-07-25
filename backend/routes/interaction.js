@@ -10,6 +10,7 @@ const {
   repost,
   removeRepost,
   sharePost,
+  getUserInteractionStatus,
 } = require("../controllers/interactionController");
 
 // Likes
@@ -30,5 +31,7 @@ router.delete("/repost/:postId", removeRepost);
 
 // Share
 router.post("/share/:postId", sharePost);
+
+router.get("/status/:postId", getUserInteractionStatus);
 
 module.exports = router;
