@@ -8,6 +8,7 @@ const {
   createPost,
   updatePost,
   deletePost,
+  getSinglePost,
 } = require("../controllers/postController");
 
 //storege configuration for multer
@@ -27,4 +28,5 @@ router.post("/", upload.single("image"), createPost);
 router.get("/", getAllPosts);
 router.delete("/:id", deletePost);
 router.put("/:id", upload.single("image"), updatePost);
+router.get("/:id", getSinglePost);
 module.exports = router;

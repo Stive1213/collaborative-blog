@@ -102,5 +102,41 @@ const deletePost = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+const getSinglePost = async (req, res) => {
+  const { id } = req.params;
 
-module.exports = { createPost, getAllPosts, deletePost, updatePost };
+  try {
+    const post = await db("posts")
+      .leftJoin("users", "posts.user_id", "users.id")
+      .leftJoin("likes", "posts.id", "likes.post_id")
+      .leftJoin("reposts", "posts.id", "reposts.original_post_id")
+      .leftJoin("shares", "posts.id", "shares.post_id")
+      .where("posts.id", id)
+      .groupBy("posts.id")
+      .select(
+        "posts.*",
+        "users.name as author_name",
+        db.raw("COUNT(DISTINCT likes.id) as like_count"),
+        db.raw("COUNT(DISTINCT reposts.id) as repost_count"),
+        db.raw("COUNT(DISTINCT shares.id) as share_count")
+      )
+      .first();
+
+    const comments = await db("comments")
+      .where({ post_id: id })
+      .orderBy("created_at", "desc");
+
+    res.json({ post, comments });
+  } catch (err) {
+    console.error("Error fetching post detail:", err);
+    res.status(500).json({ message: "Error fetching post" });
+  }
+};
+
+module.exports = {
+  createPost,
+  getAllPosts,
+  deletePost,
+  updatePost,
+  getSinglePost,
+};
