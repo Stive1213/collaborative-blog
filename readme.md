@@ -1,13 +1,10 @@
-🔥 Absolutely! Below is **The Ultimate README** for your **Collaborative Blog App** — packed with icons, markdown magic, usage examples, and more. It’s clean, professional, and ready to impress GitHub visitors.
-
----
 
 ```markdown
 # 📝 Collaborative Blog App
 
 > A full-featured modern blogging platform where users can create posts, interact socially (like, comment, repost), and collaborate — built with ❤️ using **React, Node.js, SQLite, and Google Auth**.
 
-![screenshot](https://your-screenshot-link-here.com/preview.png)
+![screenshot]()
 
 ---
 
@@ -89,9 +86,7 @@ frontend/
 
 ## 📷 Screenshot
 
-> 📌 _Replace the link below with your actual screenshot image link._
-
-[![App Screenshot](https://your-screenshot-link-here.com/preview.png)](https://your-screenshot-link-here.com/full-view)
+[![App Screenshot]()]()
 
 ---
 
@@ -162,7 +157,6 @@ GOOGLE_CLIENT_ID=your_google_client_id
 
 ## 📌 Future Improvements
 
-- ✅ Infinite scroll or pagination
 - 🧵 Hashtags and mentions
 - 🕒 Notifications & activity logs
 - 🗃️ Search and filters
