@@ -26,7 +26,7 @@ const getCounts = async (postId) => {
   };
 };
 
-// 📥 Create Post
+//  Create Post
 const createPost = async (req, res) => {
   const { user_id, title, content } = req.body;
   const image = req.file;
@@ -52,7 +52,7 @@ const createPost = async (req, res) => {
   }
 };
 
-// 📤 Get All Posts (with interaction counts & author)
+//  Get All Posts (with interaction counts & author)
 const getAllPosts = async (req, res) => {
   try {
     const posts = await db("posts")
@@ -77,7 +77,7 @@ const getAllPosts = async (req, res) => {
   }
 };
 
-// 📄 Get Single Post with Comments
+// Get Single Post with Comments
 const getSinglePost = async (req, res) => {
   const { id } = req.params;
   try {
@@ -105,33 +105,37 @@ const getSinglePost = async (req, res) => {
   }
 };
 
-// ✏️ Update Post
 const updatePost = async (req, res) => {
   const { id } = req.params;
   const { title, content, pin } = req.body;
-  const image = req.file;
+  const image = req.file; // multer handles this
 
   try {
     const post = await db("posts").where({ id }).first();
-    if (!post) return res.status(404).json({ message: "Not found" });
+    if (!post) return res.status(404).json({ message: "Post not found" });
 
-    await db("posts")
-      .where({ id })
-      .update({
-        title: title || post.title,
-        content: content || post.content,
-        pin: pin !== undefined ? pin : post.pin,
-        image_path: image ? `uploads/${image.filename}` : post.image_path,
-      });
+    const updatedFields = {
+      title: title || post.title,
+      content: content || post.content,
+      pin: pin !== undefined ? pin : post.pin,
+    };
+
+    // Only update image if new one is uploaded
+    if (image) {
+      updatedFields.image_path = `uploads/${image.filename}`;
+    }
+
+    await db("posts").where({ id }).update(updatedFields);
 
     const updated = await db("posts").where({ id }).first();
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ message: "Error updating" });
+    console.error(err);
+    res.status(500).json({ message: "Error updating post" });
   }
 };
 
-// ❌ Delete Post
+//  Delete Post
 const deletePost = async (req, res) => {
   const { id } = req.params;
   const { user_id, is_admin } = req.body;
@@ -147,7 +151,7 @@ const deletePost = async (req, res) => {
   res.json({ message: "Post deleted" });
 };
 
-// 💬 Comment
+// Comment
 const commentOnPost = async (req, res) => {
   const { user_id, post_id, content } = req.body;
   if (!content) return res.status(400).json({ message: "Empty comment" });
@@ -156,7 +160,7 @@ const commentOnPost = async (req, res) => {
   res.json({ message: "Comment added" });
 };
 
-// 🗑️ Delete Comment
+// Delete Comment
 const deleteComment = async (req, res) => {
   const { comment_id } = req.params;
   const { user_id, is_post_owner } = req.body;
@@ -172,7 +176,7 @@ const deleteComment = async (req, res) => {
   res.json({ message: "Comment deleted" });
 };
 
-// ❤️ Like/Unlike
+//  Like/Unlike
 const likePost = async (req, res) => {
   const { user_id, post_id } = req.body;
   const exists = await db("likes").where({ user_id, post_id }).first();
@@ -185,7 +189,7 @@ const likePost = async (req, res) => {
   }
 };
 
-// 🔁 Repost/Remove
+//  Repost/Remove
 const repostPost = async (req, res) => {
   const { user_id, post_id } = req.body;
   const exists = await db("reposts")
@@ -200,7 +204,7 @@ const repostPost = async (req, res) => {
   }
 };
 
-// ⭐ Save/Unsave
+//  Save/Unsave
 const savePost = async (req, res) => {
   const { user_id, post_id } = req.body;
   const exists = await db("favorites").where({ user_id, post_id }).first();
@@ -213,7 +217,7 @@ const savePost = async (req, res) => {
   }
 };
 
-// 📤 Share
+//  Share
 const sharePost = async (req, res) => {
   const { user_id, post_id } = req.body;
   await db("shares").insert({ user_id, post_id });

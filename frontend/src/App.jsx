@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UserList from "./pages/UserList";
 import PostDetailPage from "./pages/PostDetailPage";
 import ProfilePage from "./pages/ProfilePage";
+import MyProfile from "./pages/MyProfile";
 function App() {
   const { user, loading } = useAuth();
 
@@ -74,6 +75,7 @@ function App() {
             }
           />
           <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route path="/my-profile" element={<MyProfile />} />
         </Routes>
       </div>
     </Router>
