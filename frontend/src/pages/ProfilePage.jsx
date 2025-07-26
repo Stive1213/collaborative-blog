@@ -1,42 +1,40 @@
 import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function Dashboard() {
-  const [posts, setPosts] = useState([]);
+function ProfilePage() {
+  const { id } = useParams(); // user ID from URL
   const { user } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/posts")
-      .then((res) => setPosts(res.data))
-      .catch((err) => console.error("Error fetching posts:", err));
-  }, []);
+    fetchPosts();
+  }, [id]);
 
-  const toggleLike = async (postId) => {
-    await axios.post("http://localhost:5000/posts/like", {
-      user_id: user.id,
-      post_id: postId,
-    });
-    refreshPosts();
+  const fetchPosts = async () => {
+    try {
+      const allPosts = await axios.get("http://localhost:5000/posts");
+      const userPosts = allPosts.data.filter(
+        (post) => post.author.id === Number(id)
+      );
+      if (userPosts.length > 0) {
+        setProfile(userPosts[0].author); // author info
+      }
+      setPosts(userPosts);
+    } catch (err) {
+      console.error("Error loading profile:", err);
+    }
   };
 
-  const toggleSave = async (postId) => {
-    await axios.post("http://localhost:5000/posts/save", {
+  const toggleInteraction = async (action, postId) => {
+    await axios.post(`http://localhost:5000/posts/${action}`, {
       user_id: user.id,
       post_id: postId,
     });
-    refreshPosts();
-  };
-
-  const toggleRepost = async (postId) => {
-    await axios.post("http://localhost:5000/posts/repost", {
-      user_id: user.id,
-      post_id: postId,
-    });
-    refreshPosts();
+    fetchPosts(); // refresh counts
   };
 
   const sharePost = async (postId) => {
@@ -44,36 +42,26 @@ function Dashboard() {
       user_id: user.id,
       post_id: postId,
     });
-    const url = `${window.location.origin}/posts/${postId}`;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(`${window.location.origin}/posts/${postId}`);
     alert("Post link copied!");
   };
 
-  const refreshPosts = async () => {
-    const res = await axios.get("http://localhost:5000/posts");
-    setPosts(res.data);
-  };
-
-  const truncate = (text, maxLines = 3) => {
-    const lines = text.split("\n");
-    return (
-      lines.slice(0, maxLines).join("\n") +
-      (lines.length > maxLines ? "..." : "")
-    );
-  };
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      {profile ? (
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">{profile.name}</h1>
+          <p className="text-sm text-gray-600">User ID: {profile.id}</p>
+        </div>
+      ) : (
+        <p className="text-center">User not found or no posts yet.</p>
+      )}
+
       {posts.map((post) => (
-        <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <Link
-              to={`/profile/${post.author.id}`}
-              className="text-blue-600 font-semibold hover:underline"
-            >
-              {post.author.name}
-            </Link>
-            <span className="text-xs text-gray-500">
+        <div key={post.id} className="bg-white shadow rounded-lg p-4 mb-6">
+          <div className="flex justify-between">
+            <span className="text-blue-600 font-semibold">{profile.name}</span>
+            <span className="text-sm text-gray-500">
               {new Date(post.created_at).toLocaleDateString()}
             </span>
           </div>
@@ -83,8 +71,8 @@ function Dashboard() {
             onClick={() => navigate(`/posts/${post.id}`)}
           >
             <h3 className="text-lg font-bold">{post.title}</h3>
-            <p className="text-gray-700 whitespace-pre-line">
-              {truncate(post.content)}
+            <p className="text-gray-700">
+              {post.content.split("\n").slice(0, 3).join("\n")}...
             </p>
             {post.image_path && (
               <img
@@ -98,7 +86,7 @@ function Dashboard() {
           <div className="flex justify-between text-sm text-gray-600 mt-3">
             <div className="flex gap-4">
               <button
-                onClick={() => toggleLike(post.id)}
+                onClick={() => toggleInteraction("like", post.id)}
                 className="hover:text-red-500"
               >
                 ❤️ {post.like_count}
@@ -110,13 +98,13 @@ function Dashboard() {
                 📤 {post.share_count}
               </button>
               <button
-                onClick={() => toggleRepost(post.id)}
+                onClick={() => toggleInteraction("repost", post.id)}
                 className="hover:text-green-600"
               >
                 🔁 {post.repost_count}
               </button>
               <button
-                onClick={() => toggleSave(post.id)}
+                onClick={() => toggleInteraction("save", post.id)}
                 className="hover:text-yellow-600"
               >
                 ⭐ {post.favorite_count}
@@ -130,4 +118,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default ProfilePage;

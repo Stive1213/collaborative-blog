@@ -16,6 +16,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserList from "./pages/UserList";
 import PostDetailPage from "./pages/PostDetailPage";
+import ProfilePage from "./pages/ProfilePage";
 function App() {
   const { user, loading } = useAuth();
 
@@ -48,14 +49,7 @@ function App() {
               )
             }
           />
-          <Route
-            path="/post/:id"
-            element={
-              <PrivateRoute>
-                <PostDetailPage />
-              </PrivateRoute>
-            }
-          />
+          <Route path="/posts/:id" element={<PostDetailPage />} />
           <Route
             path="/register"
             element={user ? <Navigate to="/" /> : <Register />}
@@ -79,6 +73,7 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/profile/:id" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>
